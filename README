@@ -1,0 +1,18 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=3193
+
+This script eases sending lines to the ahead-started daemon. I needed and tested it for creating a test server with netcat and send the pre-recorded sentences to the clients:
+
+:V4dStart nc -l -p 10010
+
+Starts netcat listening on port 10010. Then you start a client somewhere.
+From the buffer you are working:
+
+[Select by v,V,ctrl-v] :V4dSendLine
+[Select by v] :V4dSendWord
+
+Sends the line(s) you are on/selected to the daemon (and pushed to clients in my case).
+
+:V4dStop
+
+(-:njoy!
+
