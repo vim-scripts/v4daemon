@@ -33,10 +33,10 @@ if !exists("g:v4d_sendcmd_directory")
     let g:v4d_sendcmd_directory = $HOME . "/.vim"
 endif
 
-com! -nargs=* V4dStart             call <SID>StartDaemon(<f-args>)
-com! -nargs=0 V4dStop              call <SID>StopDaemon()
-com! -nargs=0 V4dSendLine          call <SID>SendLine(getpos(".")[1])
-com! -nargs=0 -range V4dSendVisual <line1>,<line2>call <SID>SendLineVisual()
+com! -nargs=*        V4dStart    call <SID>StartDaemon(<f-args>)
+com! -nargs=0        V4dStop     call <SID>StopDaemon()
+com! -nargs=0 -range V4dSendLine <line1>,<line2>call <SID>SendLine()
+com! -nargs=0 -range V4dSendWord <line1>,<line2>call <SID>SendWord()
 
 function! <SID>StartDaemon(progname, ...)
     if s:V4d_Pipe != ""
@@ -71,15 +71,42 @@ function! <SID>StopDaemon()
     endif
 endfunction
 
-function! <SID>SendLine(linenum)
+function! s:Send(str)
     if s:V4d_Pipe != ""
-        let res = system('echo -n "'. getline(a:linenum) . '" > ' . s:V4d_Pipe)
+        let res = system('echo -n '. shellescape(a:str) . ' > ' . s:V4d_Pipe)
     endif
 endfunction
 
-function! <SID>SendLineVisual() range
+function! <SID>SendLine() range
     for i in range(a:firstline, a:lastline)
-        call <SID>SendLine(i)
+        call s:Send(getline(i))
     endfor
+endfunction
+
+function! <SID>SendWord() range
+    if visualmode() == "\<c-v>"
+       echoerr "Visual block mode is not supported"
+       return
+    endif
+    if visualmode() ==# "V"
+       echoerr "Use SendLine instead"
+       return
+    endif
+    let y1      = line("'<")
+    let y2      = line("'>")
+    let leftcol = virtcol("'<")
+    let rghtcol = virtcol("'>")
+    if y1 < y2 
+        call s:Send(strpart(getline(y1), leftcol-1))
+        let i = y1+1
+        while i < y2
+            call s:Send(getline(i))
+            let i = i+1
+        endwhile
+        call s:Send(strpart(getline(y2), 0, rghtcol))
+    endif
+    if y1 == y2 
+        call s:Send(strpart(getline(y1), leftcol-1, (rghtcol-leftcol)))
+    endif
 endfunction
 
